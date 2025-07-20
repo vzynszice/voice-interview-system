@@ -21,8 +21,8 @@ Multilingual native voice interviews: Microphone → STT → (Translation) → L
 
 ## Quick Start
 ```bash
-git clone <repo-url>
-cd <repo-folder>
+git clone https://github.com/vzynszice/voice-interview-system.git
+cd voice-interview-system
 python -m venv venv
 source venv/bin/activate  
 pip install -r requirements.txt
