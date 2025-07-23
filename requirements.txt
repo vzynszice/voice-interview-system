@@ -1,5 +1,3 @@
-# requirements.txt (PİPER TTS İLE NİHAİ VE %100 ÇALIŞIR HALİ)
-
 # ---------- Core ----------
 python-dotenv==1.0.0
 pydantic>=2.10,<3.0
