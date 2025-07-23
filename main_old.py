@@ -1,5 +1,3 @@
-# main.py (Doğru ve Tam Hali)
-
 import asyncio
 import json
 import sys
@@ -13,7 +11,6 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from loguru import logger
 
-# === DOĞRU IMPORTLAR ===
 from config import config
 from src.orchestrator.orchestrator import InterviewOrchestrator
 from src.orchestrator.schema import JobInfo, CandidateInfo, QA
