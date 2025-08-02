@@ -1,17 +1,3 @@
-"""
-OpenAI ChatGPT API İstemcisi - Sentetik Veri Üretimi
-
-Bu modül, ChatGPT'yi kullanarak gerçekçi iş ilanları ve şirket bilgileri üretir.
-Neden sentetik veri? Çünkü her test için gerçek iş ilanı bulmak yerine,
-ihtiyacımıza özel, tutarlı ve gerçekçi veriler üretebiliriz.
-
-Kullanım Alanları:
-1. İş ilanı (Job Post) üretimi
-2. Şirket profili oluşturma
-3. Pozisyon gereksinimleri belirleme
-4. Mülakat soruları önerisi
-"""
-
 import json
 from typing import Dict, List, Optional, Any
 import asyncio
@@ -25,25 +11,12 @@ from config import config
 
 
 class ChatGPTClient:
-    """
-    OpenAI ChatGPT ile sentetik veri üreten istemci.
-    
-    Bu sınıf, mülakat sistemi için gerekli olan gerçekçi verileri üretir.
-    Üretilen veriler, gerçek iş ilanlarından ayırt edilemeyecek kalitededir.
-    """
     
     def __init__(self):
-        """ChatGPT istemcisini başlat"""
         self.api_key = config.api.openai_api_key
-        
-        # Async OpenAI istemcisi
         self.client = AsyncOpenAI(api_key=self.api_key)
-        
-        # Model ayarları
-        self.model = "gpt-4o-mini"  # En güncel ve yetenekli model
-        self.temperature = 0.8  # Yaratıcılık için biraz yüksek
-        
-        # İstatistikler
+        self.model = "gpt-4o-mini"  
+        self.temperature = 0.8 
         self.total_generations = 0
         self.total_tokens_used = 0
         
@@ -62,23 +35,8 @@ class ChatGPTClient:
         location: str = "Istanbul, Turkey",
         industry: Optional[str] = None
     ) -> Dict:
-        """
-        Gerçekçi bir iş ilanı üret.
-        
-        Args:
-            position_title: Pozisyon başlığı (örn: "Full Stack Developer")
-            company_type: Şirket tipi (startup, enterprise, vs.)
-            seniority_level: Kıdem seviyesi (junior, mid, senior, lead)
-            location: Konum
-            industry: Sektör
-            
-        Returns:
-            İş ilanı verisi (JSON formatında)
-        """
         try:
             logger.info(f"İş ilanı üretiliyor: {position_title}")
-            
-            # Prompt'u hazırla
             prompt = self._create_job_post_prompt(
                 position_title,
                 company_type,
@@ -86,8 +44,6 @@ class ChatGPTClient:
                 location,
                 industry
             )
-            
-            # ChatGPT'ye gönder
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -103,17 +59,11 @@ class ChatGPTClient:
                 temperature=self.temperature,
                 response_format={"type": "json_object"}  # JSON yanıt garantisi
             )
-            
-            # Yanıtı parse et
             content = response.choices[0].message.content
             job_post = json.loads(content)
-            
-            # İstatistikleri güncelle
             self.total_generations += 1
             if hasattr(response, 'usage'):
                 self.total_tokens_used += response.usage.total_tokens
-            
-            # ID ve metadata ekle
             job_post['jobId'] = self._generate_job_id()
             job_post['metadata'] = {
                 'createdDate': datetime.now().isoformat(),
@@ -121,7 +71,7 @@ class ChatGPTClient:
                 'status': 'active'
             }
             
-            logger.info(f"İş ilanı başarıyla üretildi: {job_post['jobId']}")
+            logger.info(f"Job Post is genareted: {job_post['jobId']}")
             
             return job_post
             
