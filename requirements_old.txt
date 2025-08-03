@@ -4,11 +4,11 @@ pydantic>=2.10,<3.0
 pydantic-settings>=2.1,<3.0
 
 # Orchestration
-pydantic-ai==0.0.9            # getirir: groq/openai/google-auth >=2.36
+pydantic-ai==0.0.9            
 
 # ---------- API Clients ----
 groq>=0.12.0,<0.30
-openai~=1.95                  # 1.95.x serisi
+openai~=1.95                  
 elevenlabs>=1.0.0,<2.0
 google-cloud-translate==3.21.1
 
