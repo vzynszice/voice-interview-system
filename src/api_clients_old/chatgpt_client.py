@@ -20,7 +20,7 @@ class ChatGPTClient:
         self.total_generations = 0
         self.total_tokens_used = 0
         
-        logger.info(f"ChatGPT istemcisi başlatıldı. Model: {self.model}")
+        logger.info(f"ChatGPT Client has started. Model: {self.model}")
     
     @retry(
         stop=stop_after_attempt(3),
@@ -36,7 +36,7 @@ class ChatGPTClient:
         industry: Optional[str] = None
     ) -> Dict:
         try:
-            logger.info(f"İş ilanı üretiliyor: {position_title}")
+            logger.info(f"Job post is generating: {position_title}")
             prompt = self._create_job_post_prompt(
                 position_title,
                 company_type,
@@ -57,7 +57,7 @@ class ChatGPTClient:
                     }
                 ],
                 temperature=self.temperature,
-                response_format={"type": "json_object"}  # JSON yanıt garantisi
+                response_format={"type": "json_object"}  
             )
             content = response.choices[0].message.content
             job_post = json.loads(content)
@@ -71,12 +71,12 @@ class ChatGPTClient:
                 'status': 'active'
             }
             
-            logger.info(f"Job Post is genareted: {job_post['jobId']}")
+            logger.info(f"Job Post is generated: {job_post['jobId']}")
             
             return job_post
             
         except Exception as e:
-            logger.error(f"İş ilanı üretme hatası: {e}")
+            logger.error(f"Job posting generating error: {e}")
             raise
     
     def _create_job_post_prompt(
@@ -87,13 +87,7 @@ class ChatGPTClient:
         location: str,
         industry: Optional[str]
     ) -> str:
-        """
-        İş ilanı üretimi için detaylı prompt oluştur.
-        
-        Prompt kalitesi, üretilen verinin kalitesini doğrudan etkiler.
-        Bu yüzden çok detaylı ve yapılandırılmış bir prompt kullanıyoruz.
-        """
-        # Şirket tipi belirtilmemişse rastgele seç
+
         if not company_type:
             company_type = random.choice([
                 "fast-growing startup",
@@ -102,8 +96,6 @@ class ChatGPTClient:
                 "innovative scale-up",
                 "digital agency"
             ])
-        
-        # Sektör belirtilmemişse pozisyona göre tahmin et
         if not industry:
             if "developer" in position_title.lower() or "engineer" in position_title.lower():
                 industry = "Technology"
@@ -259,19 +251,6 @@ Return a JSON object with:
         position_title: str,
         basic_requirements: List[str]
     ) -> Dict:
-        """
-        Temel gereksinimleri detaylandır ve zenginleştir.
-        
-        Basit bir gereksinim listesini, detaylı ve yapılandırılmış
-        bir gereksinim setine dönüştürür.
-        
-        Args:
-            position_title: Pozisyon başlığı
-            basic_requirements: Temel gereksinimler listesi
-            
-        Returns:
-            Detaylı gereksinimler
-        """
         prompt = f"""Given the position "{position_title}" and these basic requirements:
 {json.dumps(basic_requirements, indent=2)}
 
@@ -323,7 +302,7 @@ Create a comprehensive and detailed requirements structure:
                 {"role": "system", "content": "You are an expert recruiter who creates detailed job requirements."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,  # Biraz daha düşük, tutarlılık için
+            temperature=0.7,  
             response_format={"type": "json_object"}
         )
         
@@ -335,20 +314,6 @@ Create a comprehensive and detailed requirements structure:
         question_type: str = "mixed",
         count: int = 10
     ) -> List[Dict]:
-        """
-        Pozisyona özel mülakat soruları üret.
-        
-        Bu fonksiyon, iş ilanına göre özelleştirilmiş sorular üretir.
-        Sorular, gerçek mülakatlardan ayırt edilemez kalitededir.
-        
-        Args:
-            job_post: İş ilanı verisi
-            question_type: Soru tipi (technical/behavioral/situational/mixed)
-            count: Üretilecek soru sayısı
-            
-        Returns:
-            Soru listesi
-        """
         position = job_post.get('basicInfo', {}).get('title', 'Unknown Position')
         requirements = job_post.get('requirements', {})
         
@@ -394,11 +359,6 @@ Make questions specific to the role and requirements. Include a mix of:
         return result.get('questions', [])
     
     def _generate_job_id(self) -> str:
-        """
-        Benzersiz bir iş ilanı ID'si üret.
-        
-        ID formatı: JOB_YYYYMMDD_XXXX (örn: JOB_20240115_A7B3)
-        """
         date_part = datetime.now().strftime("%Y%m%d")
         random_part = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=4))
         return f"JOB_{date_part}_{random_part}"
@@ -409,50 +369,25 @@ Make questions specific to the role and requirements. Include a mix of:
         candidate_level: str = "mid",
         interview_duration: int = 45
     ) -> Dict:
-        """
-        Tam bir mülakat paketi oluştur.
-        
-        Bu fonksiyon, bir pozisyon için gereken tüm verileri üretir:
-        - Şirket profili
-        - İş ilanı
-        - Mülakat soruları
-        - Değerlendirme kriterleri
-        
-        Args:
-            position_title: Pozisyon başlığı
-            candidate_level: Aday seviyesi
-            interview_duration: Mülakat süresi (dakika)
-            
-        Returns:
-            Komple mülakat paketi
-        """
-        logger.info(f"Komple mülakat paketi oluşturuluyor: {position_title}")
-        
-        # 1. Önce şirket profili oluştur
+        logger.info(f"Interview is generating: {position_title}")
         company = await self.generate_company_profile(
             industry="Technology",
             size="51-200"
         )
         
-        # 2. İş ilanı oluştur
         job_post = await self.generate_job_post(
             position_title=position_title,
             company_type="tech company",
             seniority_level=candidate_level,
             location="Istanbul, Turkey"
         )
-        
-        # Şirket bilgilerini iş ilanına ekle
+    
         job_post['company'] = company
-        
-        # 3. Mülakat soruları oluştur
         questions = await self.generate_interview_questions(
             job_post=job_post,
             question_type="mixed",
-            count=14  # Mülakat ayarlarına göre
+            count=14  
         )
-        
-        # 4. Mülakat ayarlarını ekle
         job_post['interviewSettings'] = {
             'estimatedDuration': f"{interview_duration} minutes",
             'questionDistribution': {
@@ -474,7 +409,6 @@ Make questions specific to the role and requirements. Include a mix of:
             }
         }
         
-        # 5. Paketi oluştur
         package = {
             'packageId': f"PKG_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             'createdAt': datetime.now().isoformat(),
@@ -486,12 +420,10 @@ Make questions specific to the role and requirements. Include a mix of:
             'estimatedDuration': interview_duration
         }
         
-        logger.info(f"Mülakat paketi hazır: {package['packageId']}")
-        
+        logger.info(f"Interview is completed: {package['packageId']}")
         return package
     
     def get_statistics(self) -> Dict:
-        """API kullanım istatistiklerini döndür"""
         return {
             'total_generations': self.total_generations,
             'total_tokens_used': self.total_tokens_used,
@@ -503,11 +435,6 @@ Make questions specific to the role and requirements. Include a mix of:
         }
     
     async def test_connection(self) -> bool:
-        """
-        API bağlantısını test et.
-        
-        Basit bir tamamlama isteği göndererek API'nin çalıştığını doğrular.
-        """
         try:
             logger.info("ChatGPT API bağlantısı test ediliyor...")
             
@@ -532,33 +459,27 @@ Make questions specific to the role and requirements. Include a mix of:
             logger.error(f"❌ ChatGPT API bağlantı hatası: {e}")
             return False
 
-
-# Test için
 if __name__ == "__main__":
     async def test():
         client = ChatGPTClient()
         
         # Bağlantı testi
         if await client.test_connection():
-            print("✅ ChatGPT bağlantısı başarılı!")
-            
-            # Örnek iş ilanı üret
-            print("\n📝 Örnek iş ilanı üretiliyor...")
+            print("✅ ChatGPT is connected successfully!")
+            print("\n📝 Example job post is generating...")
             job_post = await client.generate_job_post(
                 position_title="Full Stack Developer",
                 seniority_level="senior",
                 location="Istanbul, Turkey"
             )
             
-            print(f"\nÜretilen İş İlanı:")
-            print(f"  Pozisyon: {job_post['basicInfo']['title']}")
-            print(f"  Şirket: {job_post['company']['name']}")
-            print(f"  Lokasyon: {job_post['basicInfo']['location']}")
-            print(f"  Deneyim: {job_post['requirements']['experience']['minimumYears']} yıl")
-            
-            # İstatistikler
-            print(f"\nİstatistikler: {client.get_statistics()}")
+            print(f"\nGenerated Job Post:")
+            print(f"  Position: {job_post['basicInfo']['title']}")
+            print(f"  Company: {job_post['company']['name']}")
+            print(f"  Location: {job_post['basicInfo']['location']}")
+            print(f"  Experience: {job_post['requirements']['experience']['minimumYears']} yıl")
+            print(f"\nStatistics: {client.get_statistics()}")
         else:
-            print("❌ ChatGPT bağlantısı başarısız!")
+            print("❌ ChatGPT connection is failed!")
     
     asyncio.run(test())
